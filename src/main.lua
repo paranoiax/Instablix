@@ -61,10 +61,21 @@ camera:insert(leftWall)
 camera:insert(topWall)
 camera:insert(rightWall)
 
+local runtime = 0
+
+	local function getDeltaTime()
+		local temp = system.getTimer()  --Get current game time in ms
+		local dt = (temp-runtime) / (1000/30)  --60fps or 30fps as base
+		runtime = temp  --Store game time
+		return dt
+	end
+
 local function update()
 	
-	camera.x = (balloon.x - display.contentWidth / 2) * -1
-	camera.y = (balloon.y - display.contentHeight / 2) * -1
+	local dt = getDeltaTime()
+	
+	camera.x = ((balloon.x - display.contentWidth / 2) * -1)
+	camera.y = ((balloon.y - display.contentHeight / 2) * -1)
 	if balloon.paused then
 		balloon.isAwake = false
 		balloon:setLinearVelocity(0,0)
@@ -96,7 +107,7 @@ display.setStatusBar(display.HiddenStatusBar)
 function onTouch(event)
 	if event.phase == "ended" then
 		balloon.paused = false
-		balloon:applyLinearImpulse((event.x-balloon.x - camera.x)*balloon.force,(event.y-balloon.y - camera.y)*balloon.force)
+		balloon:applyLinearImpulse(((event.x-balloon.x - camera.x)*balloon.force)*settings.reverseInt,((event.y-balloon.y - camera.y)*balloon.force)*settings.reverseInt)
 		display.remove(line)
 	end
 	if event.phase == "moved" or event.phase == "began" then
