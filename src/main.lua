@@ -52,7 +52,9 @@ obstacle:setFillColor(145,135,125)
 physics.addBody(obstacle, "static", { bounce = 0, friction = 1.0 } )
 obstacle.ID = "obstacle"
 
-camera = display.newGroup()
+local camera = display.newGroup()
+camera.shake = 0
+local shake = false
 
 camera:insert(obstacle)
 camera:insert(balloon)
@@ -65,7 +67,7 @@ local runtime = 0
 
 	local function getDeltaTime()
 		local temp = system.getTimer()  --Get current game time in ms
-		local dt = (temp-runtime) / (1000/30)  --60fps or 30fps as base
+		local dt = (temp-runtime) / (1000/60)  --60fps or 30fps as base
 		runtime = temp  --Store game time
 		return dt
 	end
@@ -74,8 +76,14 @@ local function update()
 	
 	local dt = getDeltaTime()
 	
-	camera.x = ((balloon.x - display.contentWidth / 2) * -1)
-	camera.y = ((balloon.y - display.contentHeight / 2) * -1)
+	if shake then
+		camera.shake = math.random(-20,20)
+	else
+		camera.shake = 0
+	end
+	
+	camera.x = ((balloon.x - display.contentWidth / 2) * -1) + camera.shake
+	camera.y = ((balloon.y - display.contentHeight / 2) * -1) + camera.shake
 	if balloon.paused then
 		balloon.isAwake = false
 		balloon:setLinearVelocity(0,0)
@@ -97,6 +105,11 @@ local function onCollision(event)
 			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
 				obstacle:removeSelf()
 				obstacle = nil
+				shake = true
+				local function stopShake(event)
+					shake = false
+				end
+				timer.performWithDelay( 750, stopShake )
 			end
 		end
 	end
