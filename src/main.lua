@@ -14,7 +14,7 @@ else
 end
 
 local background = display.newRect( 0, 0, display.contentWidth, display.contentHeight )
-background:setFillColor( 153,223,245 )
+background:setFillColor( 53,53,53 )
 
 local balloon = display.newCircle( 550,100,25 )
 balloon:setFillColor(255,0,0)
@@ -25,6 +25,7 @@ balloon.angularVelocity = 0
 balloon.ID = "balloon"
 balloon.isBullet = true
 balloon.paused = false
+balloon.isVisible = false
 
 local ground = display.newRect(0,450,1000,50)
 ground:setFillColor(80,75,70)
@@ -51,9 +52,21 @@ local runtime = 0
 		runtime = temp  --Store game time
 		return dt
 	end
+	
+local sheet1 = graphics.newImageSheet( "tesla.png", { width=100, height=100, numFrames=8 } )
+
+-- play 8 frames every 1000 ms
+local instance1 = display.newSprite( sheet1, { name="cat", start=1, count=8, time=200, loopDirection = "bounce" } )
+instance1.x = 0
+instance1.y = 0
+instance1:play()
 
 local function update()
-	
+
+	instance1.x = balloon.x + camera.x
+	instance1.y = balloon.y + camera.y
+	instance1.rotation = instance1.rotation + math.random(-25,25)
+		
 	local dt = getDeltaTime()
 	
 	if shake then
@@ -98,7 +111,7 @@ end
 display.setStatusBar(display.HiddenStatusBar)
 
 function onTouch(event)
-	if event.phase == "ended" and balloon.paused then	
+	if event.phase == "ended" and balloon.paused then
 		balloon.paused = false
 		balloon:applyLinearImpulse(((event.x-balloon.x - camera.x)*balloon.force)*settings.reverseInt,((event.y-balloon.y - camera.y)*balloon.force)*settings.reverseInt)
 		display.remove(line)
