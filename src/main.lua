@@ -13,19 +13,12 @@ else
 	settings.reverseInt = 1
 end
 
-local gradient = graphics.newGradient(
-  { 2,176,230 },
-  { 153,223,245 },
-  "down" )
-
 local background = display.newRect( 0, 0, display.contentWidth, display.contentHeight )
-background:setFillColor( gradient )
+background:setFillColor( 153,223,245 )
 
-local balloon = display.newCircle( 0,0,25 )
+local balloon = display.newCircle( 550,100,25 )
 balloon:setFillColor(255,0,0)
 balloon.force = 0.002
-balloon.x = display.contentWidth/2
-balloon.y = display.contentHeight/2 - balloon.contentHeight
 physics.addBody(balloon, { bounce = 0, radius = 25, friction = 1.0 } )
 balloon.isFixedRotation = true
 balloon.angularVelocity = 0
@@ -33,21 +26,11 @@ balloon.ID = "balloon"
 balloon.isBullet = true
 balloon.paused = false
 
-local ground = display.newRect(0,display.contentHeight-50,display.contentWidth,50)
-ground.y = display.contentHeight - ground.contentHeight/2
+local ground = display.newRect(0,450,1000,50)
 ground:setFillColor(80,75,70)
 physics.addBody(ground, "static", { bounce = 0, friction = 1.0 } )
 
-local leftWall = display.newRect(0,0,0,display.contentHeight)
-physics.addBody(leftWall, "static", { bounce = 0, friction = 1.0 } )
-
-local rightWall = display.newRect(display.contentWidth,0,0,display.contentHeight)
-physics.addBody(rightWall, "static", { bounce = 0, friction = 1.0 } )
-
-local topWall = display.newRect(0,0,display.contentWidth,0)
-physics.addBody(topWall, "static", { bounce = 0, friction = 1.0 } )
-
-local obstacle = display.newRect(50,50,150,30)
+local obstacle = display.newRect(400,200,300,30)
 obstacle:setFillColor(145,135,125)
 physics.addBody(obstacle, "static", { bounce = 0, friction = 1.0 } )
 obstacle.ID = "obstacle"
@@ -59,9 +42,6 @@ local shake = false
 camera:insert(obstacle)
 camera:insert(balloon)
 camera:insert(ground)
-camera:insert(leftWall)
-camera:insert(topWall)
-camera:insert(rightWall)
 
 local runtime = 0
 
@@ -77,7 +57,7 @@ local function update()
 	local dt = getDeltaTime()
 	
 	if shake then
-		camera.shake = math.random(-20,20)
+		camera.shake = math.random(-15,15)
 	else
 		camera.shake = 0
 	end
@@ -118,7 +98,7 @@ end
 display.setStatusBar(display.HiddenStatusBar)
 
 function onTouch(event)
-	if event.phase == "ended" then
+	if event.phase == "ended" and balloon.paused then	
 		balloon.paused = false
 		balloon:applyLinearImpulse(((event.x-balloon.x - camera.x)*balloon.force)*settings.reverseInt,((event.y-balloon.y - camera.y)*balloon.force)*settings.reverseInt)
 		display.remove(line)
