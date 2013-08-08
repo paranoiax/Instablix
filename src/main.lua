@@ -31,6 +31,7 @@ balloon.isFixedRotation = true
 balloon.angularVelocity = 0
 balloon.ID = "balloon"
 balloon.isBullet = true
+balloon.paused = false
 
 local ground = display.newRect(0,display.contentHeight-50,display.contentWidth,50)
 ground.y = display.contentHeight - ground.contentHeight/2
@@ -51,7 +52,24 @@ obstacle:setFillColor(145,135,125)
 physics.addBody(obstacle, "static", { bounce = 0, friction = 1.0 } )
 obstacle.ID = "obstacle"
 
+camera = display.newGroup()
+
+camera:insert(obstacle)
+camera:insert(balloon)
+camera:insert(ground)
+camera:insert(leftWall)
+camera:insert(topWall)
+camera:insert(rightWall)
+
 local function update()
+	
+	--camera.x = balloon.x - display.contentWidth * 0.5
+	--camera.x = -camera.x
+	--camera.y = balloon.y - display.contentHeight * 0.5
+	--camera.y = -camera.y
+	
+	camera.x = (balloon.x - display.contentWidth / 2) * -1
+	camera.y = (balloon.y - display.contentHeight / 2) * -1
 	if balloon.paused then
 		balloon.isAwake = false
 		balloon:setLinearVelocity(0,0)
@@ -83,7 +101,7 @@ display.setStatusBar(display.HiddenStatusBar)
 function onTouch(event)
 	if event.phase == "ended" then
 		balloon.paused = false		
-		balloon:applyLinearImpulse((event.x - balloon.x)*balloon.force*settings.reverseInt,(event.y - balloon.y)*balloon.force*settings.reverseInt, balloon.x, balloon.y)
+		balloon:applyLinearImpulse((event.x-balloon.x - camera.x)*balloon.force,(event.y-balloon.y - camera.y)*balloon.force)
 	end
 end
 
