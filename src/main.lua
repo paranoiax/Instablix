@@ -63,11 +63,6 @@ camera:insert(rightWall)
 
 local function update()
 	
-	--camera.x = balloon.x - display.contentWidth * 0.5
-	--camera.x = -camera.x
-	--camera.y = balloon.y - display.contentHeight * 0.5
-	--camera.y = -camera.y
-	
 	camera.x = (balloon.x - display.contentWidth / 2) * -1
 	camera.y = (balloon.y - display.contentHeight / 2) * -1
 	if balloon.paused then
@@ -81,7 +76,7 @@ end
 local function onCollision(event)
 	if (event.phase == "began") then
 		if (event.object1.ID == "obstacle") or (event.object2.ID == "obstacle") then
-			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then		 
+			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
 				balloon.paused = true
 			end
 		end
@@ -100,8 +95,15 @@ display.setStatusBar(display.HiddenStatusBar)
 
 function onTouch(event)
 	if event.phase == "ended" then
-		balloon.paused = false		
+		balloon.paused = false
 		balloon:applyLinearImpulse((event.x-balloon.x - camera.x)*balloon.force,(event.y-balloon.y - camera.y)*balloon.force)
+		display.remove(line)
+	end
+	if event.phase == "moved" or event.phase == "began" then
+		if (line) then
+			display.remove(line)
+		end
+		if balloon.paused then line = display.newLine(balloon.x + camera.x, balloon.y + camera.y, event.x, event.y) end
 	end
 end
 
