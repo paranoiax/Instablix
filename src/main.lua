@@ -141,7 +141,7 @@ function onTouch(event)
 		end
 		if balloon.canJump then
 			line = display.newLine(balloon.x + camera.x, balloon.y + camera.y, event.x, event.y)
-			line:setColor(255,0,0,distanceFrom(event.x,event.y,balloon.x + camera.x,balloon.y + camera.y))
+			line:setColor(255,255,255,distanceFrom(event.x,event.y,balloon.x + camera.x,balloon.y + camera.y))
 		end			
 	end
 end
