@@ -38,7 +38,7 @@ background.y = display.contentHeight / 2
 local balloon = display.newCircle( 550,100,25 )
 balloon:setFillColor(255,0,0)
 balloon.force = 0.0005
-physics.addBody(balloon, { bounce = 0, radius = 12, friction = 1.0 } )
+physics.addBody(balloon, { bounce = 0, radius = 12, friction = 1.0, filter = {maskBits = 2, categoryBits = 1} } )
 balloon.isFixedRotation = true
 balloon.angularVelocity = 0
 balloon.ID = "balloon"
@@ -47,13 +47,18 @@ balloon.paused = false
 balloon.isVisible = false
 balloon.canJump = false
 
+currentParticle = 1
+limit = 100
+Particle = {}
+explode = false
+
 local ground = display.newRect(0,450,1000,50)
 ground:setFillColor(80,75,70)
-physics.addBody(ground, "static", { bounce = 0, friction = 1.0 } )
+physics.addBody(ground, "static", { bounce = 0, friction = 1.0, filter = {maskBits = 5, categoryBits = 2} } )
 
-local obstacle = display.newRect(400,200,300,30)
+obstacle = display.newRect(400,200,300,30)
 obstacle:setFillColor(145,135,125)
-physics.addBody(obstacle, "static", { bounce = 0, friction = 1.0 } )
+physics.addBody(obstacle, "static", { bounce = 0, friction = 1.0, filter = {maskBits =5, categoryBits = 2} } )
 obstacle.ID = "obstacle"
 
 local camera = display.newGroup()
@@ -63,6 +68,22 @@ local shake = false
 camera:insert(obstacle)
 camera:insert(balloon)
 camera:insert(ground)
+
+function addParticle()	
+	
+	for i = 1, limit do
+		Particle[i] = {}
+		Particle[i].size = math.random(3,6)
+		Particle[i] = display.newRect(balloon.x + math.random(-65,65), balloon.y + math.random(-50,50),Particle[currentParticle].size,Particle[currentParticle].size)
+		physics.addBody(Particle[i], { bounce = 0, friction = 1.0, filter = {maskBits = 6, categoryBits = 4} } )
+		Particle[i]:setFillColor(145,135,125)
+		--Particle[currentParticle].fixture:setUserData("particle")
+		--Particle[currentParticle].fixture:setCategory(3)
+		--Particle[currentParticle].fixture:setMask(4,5)
+		currentParticle = currentParticle + 1
+	end
+	currentParticle = 1
+end
 
 local runtime = 0
 
@@ -80,6 +101,18 @@ instance1.y = 0
 instance1:play()
 
 local function update()
+
+	for i = 1, #Particle do
+		camera:insert(Particle[i])
+	end
+
+	if explode then
+		addParticle()
+		explode = false
+		for i,v in ipairs(Particle) do
+			v:applyLinearImpulse(math.random(-2,2)/1000,math.random(-2,2)/1000)
+		end
+	end
 
 	instance1.x = balloon.x + camera.x
 	instance1.y = balloon.y + camera.y
@@ -107,7 +140,7 @@ local function onCollision(event)
 		if (event.object1.ID == "obstacle") or (event.object2.ID == "obstacle") then
 			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
 				balloon.paused = true
-				balloon.canJump = true
+				balloon.canJump = true				
 			end
 		end
 	end
@@ -117,13 +150,14 @@ local function onCollision(event)
 				obstacle:removeSelf()
 				obstacle = nil
 				shake = true
+				playExplosion()
+				explode = true
 				balloon.paused = false
 				balloon.canJump = false
 				local function stopShake(event)
 					shake = false
 				end
-				timer.performWithDelay( 750, stopShake )
-				playExplosion()
+				timer.performWithDelay( 750, stopShake )				
 			end
 		end
 	end
