@@ -48,16 +48,20 @@ balloon.isVisible = false
 balloon.canJump = false
 
 currentParticle = 1
-limit = 100
+limit = 0
 Particle = {}
 explode = false
 
 local ground = display.newRect(0,450,1000,50)
-ground:setFillColor(80,75,70)
+ground:setFillColor(180,30,30)
 physics.addBody(ground, "static", { bounce = 0, friction = 1.0, filter = {maskBits = 5, categoryBits = 2} } )
 
-obstacle = display.newRect(400,200,300,30)
-obstacle:setFillColor(145,135,125)
+obstacle = display.newRect(0,0,0,0)
+obstacle:setFillColor(80,80,80)
+obstacle.x = 550
+obstacle.y = 200
+obstacle.width = 300
+obstacle.height = 30
 physics.addBody(obstacle, "static", { bounce = 0, friction = 1.0, filter = {maskBits =5, categoryBits = 2} } )
 obstacle.ID = "obstacle"
 
@@ -68,15 +72,19 @@ local shake = false
 camera:insert(obstacle)
 camera:insert(balloon)
 camera:insert(ground)
+for i,v in ipairs(Particle) do
+	camera:insert(Particle[i])
+end
 
 function addParticle()	
 	
 	for i = 1, limit do
 		Particle[i] = {}
 		Particle[i].size = math.random(3,6)
-		Particle[i] = display.newRect(balloon.x + math.random(-65,65), balloon.y + math.random(-50,50),Particle[currentParticle].size,Particle[currentParticle].size)
-		physics.addBody(Particle[i], { bounce = 0, friction = 1.0, filter = {maskBits = 6, categoryBits = 4} } )
-		Particle[i]:setFillColor(145,135,125)
+		Particle[i] = display.newRect(collX + math.random(-collW / 2, collW / 2), collY + math.random(-collH / 2,collH / 2),Particle[i].size,Particle[i].size)
+		physics.addBody(Particle[i], { bounce = 0.05, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
+		Particle[i]:setFillColor(80,80,80)
+		camera:insert(Particle[i])
 		--Particle[currentParticle].fixture:setUserData("particle")
 		--Particle[currentParticle].fixture:setCategory(3)
 		--Particle[currentParticle].fixture:setMask(4,5)
@@ -87,12 +95,12 @@ end
 
 local runtime = 0
 
-	local function getDeltaTime()
-		local temp = system.getTimer()  --Get current game time in ms
-		local dt = (temp-runtime) / (1000/60)  --60fps or 30fps as base
-		runtime = temp  --Store game time
-		return dt
-	end
+local function getDeltaTime()
+	local temp = system.getTimer()  --Get current game time in ms
+	local dt = (temp-runtime) / (1000/60)  --60fps or 30fps as base
+	runtime = temp  --Store game time
+	return dt
+end
 	
 local sheet1 = graphics.newImageSheet( "ball_anim.png", { width=24, height=24, numFrames=16 } )
 local instance1 = display.newSprite( sheet1, { name="ball_idle", start=1, count=16, time=2000 } )
@@ -100,11 +108,16 @@ instance1.x = 0
 instance1.y = 0
 instance1:play()
 
+function slowMotion()
+	physics.pause()
+	timer.performWithDelay( 700, function()
+		physics.start()
+	end, 1 )
+end
+
 local function update()
 
-	for i = 1, #Particle do
-		camera:insert(Particle[i])
-	end
+	local dt = getDeltaTime()
 
 	if explode then
 		addParticle()
@@ -112,12 +125,7 @@ local function update()
 		for i,v in ipairs(Particle) do
 			v:applyLinearImpulse(math.random(-2,2)/1000,math.random(-2,2)/1000)
 		end
-	end
-
-	instance1.x = balloon.x + camera.x
-	instance1.y = balloon.y + camera.y
-		
-	local dt = getDeltaTime()
+	end	
 	
 	if shake then
 		camera.shake = math.random(-15,15)
@@ -127,6 +135,10 @@ local function update()
 	
 	camera.x = ((balloon.x - display.contentWidth / 2) * -1) + camera.shake
 	camera.y = ((balloon.y - display.contentHeight / 2) * -1) + camera.shake
+	
+	instance1.x = balloon.x + camera.x
+	instance1.y = balloon.y + camera.y
+	
 	if balloon.paused then
 		balloon.isAwake = false
 		balloon:setLinearVelocity(0,0)
@@ -140,7 +152,10 @@ local function onCollision(event)
 		if (event.object1.ID == "obstacle") or (event.object2.ID == "obstacle") then
 			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
 				balloon.paused = true
-				balloon.canJump = true				
+				balloon.canJump = true
+				collX, collY, collW, collH = obstacle.x, obstacle.y, obstacle.width, obstacle.height
+				limit = (collW + collH) / 4
+				if limit > 120 then limit = 120 end
 			end
 		end
 	end
@@ -157,7 +172,8 @@ local function onCollision(event)
 				local function stopShake(event)
 					shake = false
 				end
-				timer.performWithDelay( 750, stopShake )				
+				timer.performWithDelay( 700, stopShake )
+				slowMotion()
 			end
 		end
 	end
