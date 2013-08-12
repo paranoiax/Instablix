@@ -42,7 +42,7 @@ background.y = display.contentHeight / 2
 
 local balloon = display.newCircle( 777,494,25 )
 balloon:setFillColor(255,0,0)
-balloon.force = 0.0005
+balloon.force = 0.0006
 physics.addBody(balloon, { bounce = 0, radius = 12, friction = 1.0, filter = {maskBits = 2, categoryBits = 1} } )
 balloon.isFixedRotation = true
 balloon.angularVelocity = 0
@@ -130,7 +130,7 @@ function addParticle()
 		Particle[i] = {}
 		Particle[i].size = math.random(3,6)
 		Particle[i] = display.newRect(collX + math.random(-collW / 2, collW / 2), collY + math.random(-collH / 2,collH / 2),Particle[i].size,Particle[i].size)
-		physics.addBody(Particle[i], { bounce = 0.05, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
+		physics.addBody(Particle[i], { bounce = 0.035, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
 		Particle[i]:setFillColor(80,80,80)
 		camera:insert(Particle[i])
 		--Particle[currentParticle].fixture:setUserData("particle")
@@ -157,11 +157,11 @@ instance1.y = 0
 instance1:play()
 
 function slowMotion()
-	if count == 1 then
+	if count == 1 then		
 		physics.pause()
 		timer.performWithDelay( 700, function()
 			physics.start()
-		end, 1 )
+		end, 1 )		
 	end
 end
 
@@ -186,7 +186,7 @@ local function update()
 		camera.shake = math.random(-15,15)
 	else
 		camera.shake = 0
-	end
+	end	
 	
 	camera.x = ((balloon.x - display.contentWidth / 2) * -1) + camera.shake
 	camera.y = ((balloon.y - display.contentHeight / 2) * -1) + camera.shake
@@ -211,15 +211,28 @@ local function onCollision(event)
 	for i,v in ipairs(Sensor) do
 		if (event.object1.ID == Sensor[i].ID) or (event.object2.ID == Sensor[i].ID) then
 			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
+				shake = true
 				if (stopTimer) then
-				timer.cancel(stopTimer)
+					timer.cancel(stopTimer)
 				end
 				stopShake()
 				balloon.paused = true
 				balloon.canJump = true
 				collX, collY, collW, collH = Sensor[i].x, Sensor[i].y, Sensor[i].width, Sensor[i].height
-				limit = (collW + collH) / 4
-				if limit > 120 then limit = 120 end
+				limit = (collW + collH) / 3
+				if limit > 160 then limit = 160 end
+				if count == 1 then
+					transition.to( instance1, { time=750, alpha=0.0 } ) 
+					v:removeSelf()
+					v = nil
+					shake = true
+					playExplosion()
+					explode = true
+					balloon.paused = true
+					balloon.canJump = false
+					stopTimer = timer.performWithDelay( 700, stopShake )
+					slowMotion()
+				end
 			end
 		end
 	end
@@ -236,7 +249,7 @@ local function onCollision(event)
 				balloon.paused = false
 				balloon.canJump = false				
 				stopTimer = timer.performWithDelay( 700, stopShake )
-				slowMotion()				
+				--slowMotion()
 				print (count) --debug
 			end
 		end
