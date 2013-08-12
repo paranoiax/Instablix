@@ -2,6 +2,11 @@ display.setStatusBar(display.HiddenStatusBar)
 display.setDefault( "magTextureFilter", "nearest" )
 display.setDefault( "minTextureFilter", "nearest" )
 
+-----------------------------------------
+local performance = require('performance')
+performance:newPerformanceMeter()
+-----------------------------------------
+
 local physics = require("physics")
 physics.start()
 physics.setGravity(0,9.8)
@@ -35,7 +40,7 @@ local background = display.newImage( "bg.jpg", true )
 background.x = display.contentWidth / 2
 background.y = display.contentHeight / 2
 
-local balloon = display.newCircle( 550,100,25 )
+local balloon = display.newCircle( 450,-20,25 )
 balloon:setFillColor(255,0,0)
 balloon.force = 0.0005
 physics.addBody(balloon, { bounce = 0, radius = 12, friction = 1.0, filter = {maskBits = 2, categoryBits = 1} } )
@@ -56,29 +61,46 @@ local ground = display.newRect(0,450,1000,50)
 ground:setFillColor(180,30,30)
 physics.addBody(ground, "static", { bounce = 0, friction = 1.0, filter = {maskBits = 5, categoryBits = 2} } )
 
-obstacle = display.newRect(0,0,0,0)
-obstacle:setFillColor(80,80,80)
-obstacle.x = 550
-obstacle.y = 200
-obstacle.width = 300
-obstacle.height = 30
-physics.addBody(obstacle, "static", { bounce = 0, friction = 1.0, filter = {maskBits =5, categoryBits = 2} } )
-obstacle.ID = "obstacle"
-
 local camera = display.newGroup()
 camera.shake = 0
 local shake = false
 
-camera:insert(obstacle)
 camera:insert(balloon)
 camera:insert(ground)
-for i,v in ipairs(Particle) do
-	camera:insert(Particle[i])
+
+Sensor = {}
+currentSensor = 1
+
+
+function addSensor(x, y, width, height)
+	x = x + width / 2
+	y = y +height / 2
+	Sensor[currentSensor] = display.newRect(x,y,width,height)
+	Sensor[currentSensor].x = x
+	Sensor[currentSensor].y = y
+	Sensor[currentSensor].width = width
+	Sensor[currentSensor].height = height
+	Sensor[currentSensor]:setFillColor(80,80,80)
+	Sensor[currentSensor].ID = "Sensor"..tostring(currentSensor)
+	physics.addBody(Sensor[currentSensor], "static", { bounce = 0, friction = 1.0, filter = {maskBits =5, categoryBits = 2} } )
+	currentSensor = currentSensor + 1
 end
 
+addSensor (200,0,50,50)
+addSensor (300,100,50,50)
+addSensor (400,200,70,70)
+addSensor (500,300,70,70)
+
+for i,v in ipairs(Sensor) do
+	camera:insert(v)
+	print (v.ID)
+end
+
+count = #Sensor
+
 function addParticle()	
-	
-	for i = 1, limit do
+	count = count - 1
+	for i = 1, limit do				
 		Particle[i] = {}
 		Particle[i].size = math.random(3,6)
 		Particle[i] = display.newRect(collX + math.random(-collW / 2, collW / 2), collY + math.random(-collH / 2,collH / 2),Particle[i].size,Particle[i].size)
@@ -109,15 +131,22 @@ instance1.y = 0
 instance1:play()
 
 function slowMotion()
-	physics.pause()
-	timer.performWithDelay( 700, function()
-		physics.start()
-	end, 1 )
+	if count == 1 then
+		physics.pause()
+		timer.performWithDelay( 700, function()
+			physics.start()
+		end, 1 )
+	end
 end
 
-local function update()
+local function update()	
+	
+	for i,v in ipairs(Particle) do
+		camera:insert(Particle[i])
+	end
 
 	local dt = getDeltaTime()
+	instance1:toFront()
 
 	if explode then
 		addParticle()
@@ -147,35 +176,45 @@ local function update()
 	end
 end
 
+function stopShake(event)
+	shake = false
+end
+
 local function onCollision(event)
 	if (event.phase == "began") then
-		if (event.object1.ID == "obstacle") or (event.object2.ID == "obstacle") then
+	for i,v in ipairs(Sensor) do
+		if (event.object1.ID == Sensor[i].ID) or (event.object2.ID == Sensor[i].ID) then
 			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
+				if (stopTimer) then
+				timer.cancel(stopTimer)
+				end
+				stopShake()
 				balloon.paused = true
 				balloon.canJump = true
-				collX, collY, collW, collH = obstacle.x, obstacle.y, obstacle.width, obstacle.height
+				collX, collY, collW, collH = Sensor[i].x, Sensor[i].y, Sensor[i].width, Sensor[i].height
 				limit = (collW + collH) / 4
 				if limit > 120 then limit = 120 end
 			end
 		end
 	end
+	end
 	if (event.phase == "ended") then
-		if (event.object1.ID == "obstacle") or (event.object2.ID == "obstacle") then
-			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then				
-				obstacle:removeSelf()
-				obstacle = nil
+	for i,v in ipairs(Sensor) do
+		if (event.object1.ID == Sensor[i].ID) or (event.object2.ID == Sensor[i].ID) then
+			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
+				v:removeSelf()
+				v = nil
 				shake = true
 				playExplosion()
 				explode = true
 				balloon.paused = false
-				balloon.canJump = false
-				local function stopShake(event)
-					shake = false
-				end
-				timer.performWithDelay( 700, stopShake )
-				slowMotion()
+				balloon.canJump = false				
+				stopTimer = timer.performWithDelay( 700, stopShake )
+				slowMotion()				
+				print (count) --debug
 			end
 		end
+	end
 	end
 end
 
@@ -191,8 +230,11 @@ function onTouch(event)
 		end
 		if balloon.canJump then
 			line = display.newLine(balloon.x + camera.x, balloon.y + camera.y, event.x, event.y)
-			line:setColor(255,255,255,distanceFrom(event.x,event.y,balloon.x + camera.x,balloon.y + camera.y))
-		end			
+			local dist = distanceFrom(event.x,event.y,balloon.x + camera.x,balloon.y + camera.y)*1.25
+			if dist > 255 then dist = 255 end
+			line:setColor(255,255,255,dist)
+			line.width = 2
+		end
 	end
 end
 
@@ -203,5 +245,5 @@ function distanceFrom(x1,y1,x2,y2)
 end
 
 Runtime:addEventListener("collision", onCollision)
-Runtime:addEventListener("enterFrame", update)
 Runtime:addEventListener("touch", onTouch)
+Runtime:addEventListener("enterFrame", update)
