@@ -40,7 +40,7 @@ local background = display.newImage( "bg.jpg", true )
 background.x = display.contentWidth / 2
 background.y = display.contentHeight / 2
 
-local balloon = display.newCircle( 450,-20,25 )
+local balloon = display.newCircle( 777,494,25 )
 balloon:setFillColor(255,0,0)
 balloon.force = 0.0005
 physics.addBody(balloon, { bounce = 0, radius = 12, friction = 1.0, filter = {maskBits = 2, categoryBits = 1} } )
@@ -57,24 +57,26 @@ limit = 0
 Particle = {}
 explode = false
 
-local ground = display.newRect(0,450,1000,50)
-ground:setFillColor(180,30,30)
-physics.addBody(ground, "static", { bounce = 0, friction = 1.0, filter = {maskBits = 5, categoryBits = 2} } )
+--local ground = display.newRect(0,450,1000,50)
+--ground:setFillColor(180,30,30)
+--physics.addBody(ground, "static", { bounce = 0, friction = 1.0, filter = {maskBits = 5, categoryBits = 2} } )
 
 local camera = display.newGroup()
 camera.shake = 0
 local shake = false
 
 camera:insert(balloon)
-camera:insert(ground)
+--camera:insert(ground)
 
 Sensor = {}
 currentSensor = 1
+Wall = {}
+currentWall = 1
 
 
 function addSensor(x, y, width, height)
 	x = x + width / 2
-	y = y +height / 2
+	y = y - height / 2
 	Sensor[currentSensor] = display.newRect(x,y,width,height)
 	Sensor[currentSensor].x = x
 	Sensor[currentSensor].y = y
@@ -82,18 +84,42 @@ function addSensor(x, y, width, height)
 	Sensor[currentSensor].height = height
 	Sensor[currentSensor]:setFillColor(80,80,80)
 	Sensor[currentSensor].ID = "Sensor"..tostring(currentSensor)
-	physics.addBody(Sensor[currentSensor], "static", { bounce = 0, friction = 1.0, filter = {maskBits =5, categoryBits = 2} } )
+	physics.addBody(Sensor[currentSensor], "static", { bounce = 0, friction = 1.0, filter = {maskBits = 5, categoryBits = 2} } )
 	currentSensor = currentSensor + 1
 end
 
-addSensor (200,0,50,50)
-addSensor (300,100,50,50)
-addSensor (400,200,70,70)
-addSensor (500,300,70,70)
+function addWall(x, y, width, height)
+	x = x + width / 2
+	y = y - height / 2
+	Wall[currentWall] = display.newRect(x,y,width,height)
+	Wall[currentWall].x = x
+	Wall[currentWall].y = y
+	Wall[currentWall].width = width
+	Wall[currentWall].height = height
+	Wall[currentWall]:setFillColor(180,30,30)
+	Wall[currentWall].ID = "Wall"
+	physics.addBody(Wall[currentWall], "static", { bounce = 0, friction = 1.0, filter = {maskBits = 5, categoryBits = 2} } )
+	currentWall = currentWall + 1
+end
+
+currentLevel = 1
+map = require ('level'..currentLevel)
+
+for i,v in pairs{sensors=addSensor, walls=addWall} do
+	for _, data in ipairs(map[i]) do
+		v(unpack(data))
+	end
+end
+
+balloon.x, balloon.y = map.player[1], map.player[2]
 
 for i,v in ipairs(Sensor) do
 	camera:insert(v)
 	print (v.ID)
+end
+
+for i,v in ipairs(Wall) do
+	camera:insert(v)
 end
 
 count = #Sensor
