@@ -22,6 +22,9 @@ else
 	settings.reverseInt = 1
 end
 
+won = false
+lost = false
+
 music = audio.loadStream("music.mp3")
 musicChannel = audio.play( music, { channel=1, loops=-1, fadein=3000 }  )
 
@@ -165,7 +168,29 @@ function slowMotion()
 	end
 end
 
-local function update()	
+function wonText()
+	local wonText = display.newText("", 0, 0, native.systemFontBold, 24)
+	wonText:setReferencePoint(display.CenterReferencePoint)
+	wonText.x = display.contentWidth * 0.5
+	wonText.y = display.contentHeight * 0.5
+	wonText:setTextColor(255, 255, 255)
+	wonText.text = "Level Completed"
+	wonText.alpha = 0
+	transition.to( wonText, { time=750, alpha=1.0 } )
+end
+
+function lostText()
+	local lostText = display.newText("", 0, 0, native.systemFontBold, 24)
+	lostText:setReferencePoint(display.CenterReferencePoint)
+	lostText.x = display.contentWidth * 0.5
+	lostText.y = display.contentHeight * 0.5
+	lostText:setTextColor(255, 255, 255)
+	lostText.text = "Try Again"
+	lostText.alpha = 0
+	transition.to( lostText, { time=750, alpha=1.0 } )
+end
+
+local function update()
 	
 	for i,v in ipairs(Particle) do
 		camera:insert(Particle[i])
@@ -208,52 +233,64 @@ end
 
 local function onCollision(event)
 	if (event.phase == "began") then
-	for i,v in ipairs(Sensor) do
-		if (event.object1.ID == Sensor[i].ID) or (event.object2.ID == Sensor[i].ID) then
+		if (event.object1.ID == 'Wall') or (event.object2.ID == 'Wall') then
 			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
-				shake = true
-				if (stopTimer) then
-					timer.cancel(stopTimer)
-				end
-				stopShake()
+				lost = true
+				lostText()
 				balloon.paused = true
-				balloon.canJump = true
-				collX, collY, collW, collH = Sensor[i].x, Sensor[i].y, Sensor[i].width, Sensor[i].height
-				limit = (collW + collH) / 3
-				if limit > 160 then limit = 160 end
-				if count == 1 then
-					transition.to( instance1, { time=750, alpha=0.0 } ) 
+				balloon.canJump = false
+				transition.to( instance1, { time=750, alpha=0.0 } )
+				playExplosion()
+			end
+		end
+		for i,v in ipairs(Sensor) do
+			if (event.object1.ID == Sensor[i].ID) or (event.object2.ID == Sensor[i].ID) then
+				if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
+					--shake = true
+					if (stopTimer) then
+						timer.cancel(stopTimer)
+					end
+					stopShake()
+					balloon.paused = true
+					balloon.canJump = true
+					collX, collY, collW, collH = Sensor[i].x, Sensor[i].y, Sensor[i].width, Sensor[i].height
+					limit = (collW + collH) / 3
+					if limit > 140 then limit = 140 end
+					if count == 1 then
+						won = true
+						wonText()
+						transition.to( instance1, { time=750, alpha=0.0 } ) 
+						v:removeSelf()
+						v = nil
+						shake = true
+						playExplosion()
+						explode = true
+						balloon.paused = true
+						balloon.canJump = false
+						stopTimer = timer.performWithDelay( 700, stopShake )
+						slowMotion()
+					end
+				end
+			end
+		end
+	end
+	if (event.phase == "ended") then
+		for i,v in ipairs(Sensor) do
+			if (event.object1.ID == Sensor[i].ID) or (event.object2.ID == Sensor[i].ID) then
+				if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
 					v:removeSelf()
 					v = nil
 					shake = true
 					playExplosion()
 					explode = true
-					balloon.paused = true
-					balloon.canJump = false
+					balloon.paused = false
+					balloon.canJump = false				
 					stopTimer = timer.performWithDelay( 700, stopShake )
-					slowMotion()
+					--slowMotion()
+					print (count) --debug
 				end
 			end
 		end
-	end
-	end
-	if (event.phase == "ended") then
-	for i,v in ipairs(Sensor) do
-		if (event.object1.ID == Sensor[i].ID) or (event.object2.ID == Sensor[i].ID) then
-			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
-				v:removeSelf()
-				v = nil
-				shake = true
-				playExplosion()
-				explode = true
-				balloon.paused = false
-				balloon.canJump = false				
-				stopTimer = timer.performWithDelay( 700, stopShake )
-				--slowMotion()
-				print (count) --debug
-			end
-		end
-	end
 	end
 end
 
