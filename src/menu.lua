@@ -6,7 +6,6 @@
 
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
-
 -- include Corona's "widget" library
 local widget = require "widget"
 
@@ -19,7 +18,7 @@ local playBtn
 local function onPlayBtnRelease()
 	
 	-- go to level1.lua scene
-	storyboard.gotoScene( "level1", "zoomInOutFade", 500)
+	storyboard.gotoScene( "game", "zoomInOutFade", 500)
 	
 	return true	-- indicates successful touch
 end
@@ -72,7 +71,7 @@ function scene:enterScene( event )
 	if storyboard.getPrevious() ~= nil then
 		--print("previous screen in mainmenu " ..  storyboard.getPrevious());
 		storyboard.purgeScene(storyboard.getPrevious())
-		storyboard.removeScene(storyboard.getPrevious())			
+		storyboard.removeScene(storyboard.getPrevious())
 	end
 	local group = self.view
 	
