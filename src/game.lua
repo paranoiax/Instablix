@@ -18,6 +18,8 @@ local collX
 local collY
 local collW
 local collH
+local VellX
+local VellY
 local line
 local distanceFrom
 --------------------------------------------
@@ -89,9 +91,13 @@ balloon.isVisible = false
 balloon.canJump = false
 
 local currentParticle = 1
+local currentDeathParticle = 1
 local limit = 0
+local deathLimit = 70
 local Particle = {}
+local DeathParticle = {}
 local explode = false
+local death = false
 
 --local ground = display.newRect(0,450,1000,50)
 --ground:setFillColor(180,30,30)
@@ -178,12 +184,22 @@ local function addParticle()
 		physics.addBody(Particle[i], { bounce = 0.035, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
 		Particle[i]:setFillColor(80,80,80)
 		camera:insert(Particle[i])
-		--Particle[currentParticle].fixture:setUserData("particle")
-		--Particle[currentParticle].fixture:setCategory(3)
-		--Particle[currentParticle].fixture:setMask(4,5)
 		currentParticle = currentParticle + 1
 	end
 	currentParticle = 1
+end
+
+local function addDeathParticle()
+	for i = 1, deathLimit do				
+		DeathParticle[i] = {}
+		DeathParticle[i].size = math.random(2,4)
+		DeathParticle[i] = display.newRect(balloon.x + math.random(-12,12), balloon.y + math.random(-12,12),DeathParticle[i].size,DeathParticle[i].size)
+		physics.addBody(DeathParticle[i], { bounce = 0.035, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
+		DeathParticle[i]:setFillColor(255,130,0)
+		camera:insert(DeathParticle[i])
+		currentDeathParticle = currentDeathParticle + 1
+	end
+	currentDeathParticle = 1
 end
 
 local runtime = 0
@@ -256,6 +272,14 @@ update = function()
 		end
 	end	
 	
+	if death then
+		addDeathParticle()
+		death = false
+		for i,v in ipairs(DeathParticle) do
+			v:applyLinearImpulse(VellX / 99000000,VellY / 99000000)
+		end
+	end
+	
 	if shake then
 		camera.shake = math.random(-15,15)
 	else
@@ -280,17 +304,20 @@ function stopShake(event)
 	shake = false
 end
 
-onCollision = function(event)
+onCollision = function(event)	
 	if (event.phase == "began") then
 		if (event.object1.ID == 'Wall') or (event.object2.ID == 'Wall') then
-			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
+			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then				
 				lost = true
-				lostText()				
+				lostText()
+				print("lost") --debug
+				death = true
+				VellX,VellY = balloon:getLinearVelocity()
 				balloon.paused = true
 				balloon.canJump = false
-				transition.to( instance1, { time=750, alpha=0.0 } )
+				instance1.alpha = 0
 				playExplosion()
-				local restartTimer = timer.performWithDelay(1250, restart)
+				local restartTimer = timer.performWithDelay(1250, restart)				
 			end
 		end
 		for i,v in ipairs(Sensor) do
@@ -309,6 +336,7 @@ onCollision = function(event)
 					if count == 1 then
 						won = true
 						wonText()
+						print("won") --debug
 						transition.to( instance1, { time=750, alpha=0.0 } ) 
 						v:removeSelf()
 						v = nil
@@ -325,7 +353,7 @@ onCollision = function(event)
 			end
 		end
 	end
-	if (event.phase == "ended") then
+	if (event.phase == "ended") then		
 		for i,v in ipairs(Sensor) do
 			if (event.object1.ID == Sensor[i].ID) or (event.object2.ID == Sensor[i].ID) then
 				if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then
