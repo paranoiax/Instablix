@@ -33,8 +33,9 @@ end
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
+	print ("menu: "..storyboard.state.currentLevel) --debug
 	local group = self.view
-
+	storyboard.printMemUsage()
 	-- display a background image
 	local background = display.newImage( "bg.jpg", true )
 	background.x = display.contentWidth / 2
@@ -70,7 +71,7 @@ end
 function scene:enterScene( event )
 	if storyboard.getPrevious() ~= nil then
 		--print("previous screen in mainmenu " ..  storyboard.getPrevious());
-		storyboard.purgeScene(storyboard.getPrevious())
+		--storyboard.purgeScene(storyboard.getPrevious())
 		storyboard.removeScene(storyboard.getPrevious())
 	end
 	local group = self.view
