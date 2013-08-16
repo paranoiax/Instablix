@@ -35,11 +35,11 @@ end
 function scene:createScene( event )
 	print ("menu: "..storyboard.state.currentLevel) --debug
 	local group = self.view
-	storyboard.printMemUsage()
+	storyboard.printMemUsage() --debug
 	-- display a background image
 	local background = display.newImage( "bg.jpg", true )
-	background.x = display.contentWidth / 2
-	background.y = display.contentHeight / 2
+	background.x = display.contentWidth * 0.5
+	background.y = display.contentHeight * 0.5
 	
 	-- create/position logo/title image on upper-half of the screen
 	local titleLogo = display.newText("", 0, 0, native.systemFontBold, 36)
@@ -96,6 +96,10 @@ function scene:destroyScene( event )
 		playBtn:removeSelf()	-- widgets must be manually removed
 		playBtn = nil
 	end
+	titleLogo = nil
+	background = nil
+	group = nil
+	widget = nil
 end
 
 -----------------------------------------------------------------------------------------

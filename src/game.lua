@@ -26,6 +26,7 @@ local count
 local map
 local stopTimer
 local restartTimer
+local textTransition
 --------------------------------------------
 
 -- forward declarations and other locals
@@ -45,7 +46,7 @@ function scene:createScene( event )
 print ("game: "..storyboard.state.currentLevel) --debug
 
 local group = self.view
-storyboard.printMemUsage()
+storyboard.printMemUsage() --debug
 display.setStatusBar(display.HiddenStatusBar)
 display.setDefault( "magTextureFilter", "nearest" )
 display.setDefault( "minTextureFilter", "nearest" )
@@ -190,7 +191,7 @@ local function addParticle()
 		Particle[i] = {}
 		Particle[i].size = math.random(3,6)
 		Particle[i] = display.newRect(collX + math.random(-collW * 0.5, collW * 0.5), collY + math.random(-collH * 0.5,collH * 0.5),Particle[i].size,Particle[i].size)
-		physics.addBody(Particle[i], { bounce = 0.035, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
+		physics.addBody(Particle[i], { bounce = 0.03, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
 		Particle[i]:setFillColor(69,69,69)
 		camera:insert(Particle[i])
 		currentParticle = currentParticle + 1
@@ -204,7 +205,7 @@ local function addDeathParticle()
 		DeathParticle[i] = {}
 		DeathParticle[i].size = math.random(2,4)
 		DeathParticle[i] = display.newRect(balloon.x + math.random(-12,12), balloon.y + math.random(-12,12),DeathParticle[i].size,DeathParticle[i].size)
-		physics.addBody(DeathParticle[i], { bounce = 0.035, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
+		physics.addBody(DeathParticle[i], { bounce = 0.07, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
 		DeathParticle[i]:setFillColor(202,143,84)
 		camera:insert(DeathParticle[i])
 		currentDeathParticle = currentDeathParticle + 1
@@ -228,39 +229,21 @@ instance1.x = balloon.x + camera.x
 instance1.y = balloon.y + camera.y
 instance1:play()
 
-local function slowMotion()
-	if count == 1 then		
-		physics.pause()
-		timer.performWithDelay( 700, function()
-			physics.start()
-		end, 1 )		
+local function stateText()
+	local stateText = display.newText("", 0, 0, native.systemFontBold, 24)
+	stateText:setReferencePoint(display.CenterReferencePoint)
+	stateText.x = display.contentWidth * 0.5
+	stateText.y = display.contentHeight * 0.5
+	stateText:setTextColor(255, 255, 255)
+	if won then
+		stateText.text = "Level Completed!"
+	elseif lost then
+		stateText.text = "Try Again"
 	end
-end
-
-local function wonText()
-	local wonText = display.newText("", 0, 0, native.systemFontBold, 24)
-	wonText:setReferencePoint(display.CenterReferencePoint)
-	wonText.x = display.contentWidth * 0.5
-	wonText.y = display.contentHeight * 0.5
-	wonText:setTextColor(255, 255, 255)
-	wonText.text = "Level Completed"
-	wonText.alpha = 0
-	transition.to( wonText, { time=750, alpha=1.0 } )
-	group:insert(wonText)
-	return wonText
-end
-
-local function lostText()
-	local lostText = display.newText("", 0, 0, native.systemFontBold, 24)
-	lostText:setReferencePoint(display.CenterReferencePoint)
-	lostText.x = display.contentWidth * 0.5
-	lostText.y = display.contentHeight * 0.5
-	lostText:setTextColor(255, 255, 255)
-	lostText.text = "Try Again"
-	lostText.alpha = 0
-	transition.to( lostText, { time=750, alpha=1.0 } )
-	group:insert(lostText)
-	return lostText
+	stateText.alpha = 0
+	textTransition = transition.to( stateText, { time=750, alpha=1.0 } )
+	group:insert(stateText)
+	return stateText
 end
 
 local function restart()
@@ -283,11 +266,11 @@ update = function()
 	instance1:toFront()
 
 	if explode then
-		addParticle()
-		explode = false
+		addParticle()		
 		for i,v in ipairs(Particle) do
-			v:applyLinearImpulse(math.random(-2,2)/1000,math.random(-2,2)/1000)
+			v:applyLinearImpulse(math.random(-2,2)/900,math.random(-2,2)/900)
 		end
+		explode = false
 	end	
 	
 	if death then
@@ -299,7 +282,7 @@ update = function()
 	end
 	
 	if shake then
-		camera.shake = math.random(-15,15)
+		camera.shake = math.random(-17,17)
 	else
 		camera.shake = 0
 	end	
@@ -327,7 +310,7 @@ onCollision = function(event)
 		if (event.object1.ID == 'Wall') or (event.object2.ID == 'Wall') then
 			if (event.object1.ID == "balloon") or (event.object2.ID == "balloon") then				
 				lost = true
-				lostText()
+				stateText()
 				print("lost") --debug
 				death = true
 				VellX,VellY = balloon:getLinearVelocity()
@@ -353,9 +336,9 @@ onCollision = function(event)
 					if limit > 140 then limit = 140 end
 					if count == 1 then
 						won = true
-						wonText()
+						stateText()
 						print("won") --debug
-						transition.to( instance1, { time=750, alpha=0.0 } ) 
+						instance1.alpha = 0
 						v:removeSelf()
 						v = nil
 						shake = true
@@ -364,7 +347,6 @@ onCollision = function(event)
 						balloon.paused = true
 						balloon.canJump = false
 						stopTimer = timer.performWithDelay( 700, stopShake )
-						--slowMotion()
 						restartTimer = timer.performWithDelay(2000, restart)
 					end
 				end
@@ -383,7 +365,6 @@ onCollision = function(event)
 					balloon.paused = false
 					balloon.canJump = false				
 					stopTimer = timer.performWithDelay( 700, stopShake )
-					--slowMotion()
 					print (count) --debug
 				end
 			end
@@ -430,8 +411,7 @@ end
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	if storyboard.getPrevious() ~= nil then
-		--print("previous screen in mainmenu " ..  storyboard.getPrevious());
-		--storyboard.purgeScene(storyboard.getPrevious())
+		--print("previous screen in mainmenu " ..  storyboard.getPrevious());		
 		storyboard.removeScene(storyboard.getPrevious())
 	end
 	local group = self.view
@@ -449,11 +429,16 @@ function scene:exitScene( event )
 	physics.stop()
 	timer.cancel(restartTimer)
 	timer.cancel(stopTimer)
+	transition.cancel(textTransition)
 	restartTimer = nil
 	stopTimer = nil
+	textTransition = nil
 	Runtime:removeEventListener("collision", onCollision)
 	Runtime:removeEventListener("enterFrame", update)
 	Runtime:removeEventListener("touch", onTouch)
+	onTouch = nil
+	update = nil
+	onCollision = nil
 end
 
 -- If scene's view is removed, scene:destroyScene() will be called just prior to:
@@ -464,8 +449,7 @@ function scene:destroyScene( event )
 	physics = nil
 	group = nil
 	camera = nil
-	lostText = nil
-	wonText = nil
+	stateText = nil
 	Particle = nil
 	DeathParticle = nil
 	Sensor = nil
@@ -473,7 +457,17 @@ function scene:destroyScene( event )
 	sheet1 = nil
 	instance1 = nil
 	currentSensor = nil
-	currentWall = nil
+	currentWall = nil	
+	collX = nil
+	collY = nil
+	collW = nil
+	collH = nil
+	VellX = nil
+	VellY = nil
+	line = nil
+	distanceFrom = nil
+	count = nil
+	map = nil
 	
 end
 
