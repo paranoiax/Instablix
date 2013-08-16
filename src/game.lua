@@ -22,10 +22,6 @@ local VellX
 local VellY
 local line
 local distanceFrom
-local count
-local map
-local stopTimer
-local restartTimer
 --------------------------------------------
 
 -- forward declarations and other locals
@@ -42,10 +38,8 @@ local restartTimer
 -- Called when the scene's view does not exist:
 function scene:createScene( event )	
 
-print ("game: "..storyboard.state.currentLevel) --debug
-
 local group = self.view
-storyboard.printMemUsage()
+
 display.setStatusBar(display.HiddenStatusBar)
 display.setDefault( "magTextureFilter", "nearest" )
 display.setDefault( "minTextureFilter", "nearest" )
@@ -81,12 +75,12 @@ local function playExplosion()
 end
 
 local background = display.newImage( "bg.jpg", true )
-background.x = display.contentWidth * 0.5
-background.y = display.contentHeight * 0.5
+background.x = display.contentWidth / 2
+background.y = display.contentHeight / 2
 
 local balloon = display.newCircle( 777,494,25 )
 balloon:setFillColor(255,0,0)
-balloon.force = 0.00065
+balloon.force = 0.0006
 physics.addBody(balloon, { bounce = 0, radius = 12, friction = 1.0, filter = {maskBits = 2, categoryBits = 1} } )
 balloon.isFixedRotation = true
 balloon.angularVelocity = 0
@@ -95,7 +89,6 @@ balloon.isBullet = true
 balloon.paused = false
 balloon.isVisible = false
 balloon.canJump = false
-balloon.gravityScale = 1.6
 
 local currentParticle = 1
 local currentDeathParticle = 1
@@ -124,35 +117,33 @@ local currentWall = 1
 
 
 local function addSensor(x, y, width, height)
-	x = x + width * 0.5
-	y = y - height * 0.5
+	x = x + width / 2
+	y = y - height / 2
 	Sensor[currentSensor] = display.newRect(x,y,width,height)
 	Sensor[currentSensor].x = x
 	Sensor[currentSensor].y = y
 	Sensor[currentSensor].width = width
 	Sensor[currentSensor].height = height
-	Sensor[currentSensor]:setFillColor(69,69,69)
+	Sensor[currentSensor]:setFillColor(80,80,80)
 	Sensor[currentSensor].ID = "Sensor"..tostring(currentSensor)
 	camera:insert(Sensor[currentSensor])
 	physics.addBody(Sensor[currentSensor], "static", { bounce = 0, friction = 1.0, filter = {maskBits = 5, categoryBits = 2} } )
 	currentSensor = currentSensor + 1
-	return Sensor[currentSensor]
 end
 
 local function addWall(x, y, width, height)
-	x = x + width * 0.5
-	y = y - height * 0.5
+	x = x + width / 2
+	y = y - height / 2
 	Wall[currentWall] = display.newRect(x,y,width,height)
 	Wall[currentWall].x = x
 	Wall[currentWall].y = y
 	Wall[currentWall].width = width
 	Wall[currentWall].height = height
-	Wall[currentWall]:setFillColor(166,38,27)
+	Wall[currentWall]:setFillColor(180,30,30)
 	Wall[currentWall].ID = "Wall"
 	camera:insert(Wall[currentWall])
 	physics.addBody(Wall[currentWall], "static", { bounce = 0, friction = 1.0, filter = {maskBits = 5, categoryBits = 2} } )
 	currentWall = currentWall + 1
-	return Wall[currentWall]
 end
 
 local function fileExists(fileName, base)
@@ -172,7 +163,7 @@ end
   return(exists)
 end
 
-local map = require ('level'..storyboard.state.currentLevel)
+local map = require ('level'..storyboard.currentLevel)
 
 for i,v in pairs{sensors=addSensor, walls=addWall} do
 	for _, data in ipairs(map[i]) do
@@ -189,14 +180,13 @@ local function addParticle()
 	for i = 1, limit do				
 		Particle[i] = {}
 		Particle[i].size = math.random(3,6)
-		Particle[i] = display.newRect(collX + math.random(-collW * 0.5, collW * 0.5), collY + math.random(-collH * 0.5,collH * 0.5),Particle[i].size,Particle[i].size)
+		Particle[i] = display.newRect(collX + math.random(-collW / 2, collW / 2), collY + math.random(-collH / 2,collH / 2),Particle[i].size,Particle[i].size)
 		physics.addBody(Particle[i], { bounce = 0.035, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
-		Particle[i]:setFillColor(69,69,69)
+		Particle[i]:setFillColor(80,80,80)
 		camera:insert(Particle[i])
 		currentParticle = currentParticle + 1
 	end
 	currentParticle = 1
-	return Particle[i]
 end
 
 local function addDeathParticle()
@@ -205,12 +195,11 @@ local function addDeathParticle()
 		DeathParticle[i].size = math.random(2,4)
 		DeathParticle[i] = display.newRect(balloon.x + math.random(-12,12), balloon.y + math.random(-12,12),DeathParticle[i].size,DeathParticle[i].size)
 		physics.addBody(DeathParticle[i], { bounce = 0.035, friction = 0.9, filter = {maskBits = 6, categoryBits = 4} } )
-		DeathParticle[i]:setFillColor(202,143,84)
+		DeathParticle[i]:setFillColor(255,130,0)
 		camera:insert(DeathParticle[i])
 		currentDeathParticle = currentDeathParticle + 1
 	end
 	currentDeathParticle = 1
-	return DeathParticle[i]
 end
 
 local runtime = 0
@@ -247,7 +236,6 @@ local function wonText()
 	wonText.alpha = 0
 	transition.to( wonText, { time=750, alpha=1.0 } )
 	group:insert(wonText)
-	return wonText
 end
 
 local function lostText()
@@ -260,21 +248,15 @@ local function lostText()
 	lostText.alpha = 0
 	transition.to( lostText, { time=750, alpha=1.0 } )
 	group:insert(lostText)
-	return lostText
 end
 
 local function restart()
-	local ready
-	if fileExists('level'..storyboard.state.currentLevel + 1 .. ".lua", system.ResourceDirectory) then
-		storyboard.state.currentLevel = storyboard.state.currentLevel + 1
-		ready = true
+	if fileExists('level'..storyboard.currentLevel + 1 .. ".lua") then
+		storyboard.currentLevel = storyboard.currentLevel + 1
 	else
-		storyboard.state.currentLevel = 1
-		ready = true
+		storyboard.currentLevel = 1
 	end
-	if ready then
-		storyboard.gotoScene( "menu", "zoomInOutFade", 500 )
-	end
+	storyboard.gotoScene( "menu", "zoomInOutFade", 500 )
 end
 
 update = function()
@@ -294,7 +276,7 @@ update = function()
 		addDeathParticle()
 		death = false
 		for i,v in ipairs(DeathParticle) do
-			v:applyLinearImpulse(VellX / 200000000,VellY / 200000000)
+			v:applyLinearImpulse(VellX / 99000000,VellY / 99000000)
 		end
 	end
 	
@@ -304,8 +286,8 @@ update = function()
 		camera.shake = 0
 	end	
 	
-	camera.x = ((balloon.x - display.contentWidth * 0.5) * -1) + camera.shake
-	camera.y = ((balloon.y - display.contentHeight * 0.5) * -1) + camera.shake
+	camera.x = ((balloon.x - display.contentWidth / 2) * -1) + camera.shake
+	camera.y = ((balloon.y - display.contentHeight / 2) * -1) + camera.shake
 	
 	instance1.x = balloon.x + camera.x
 	instance1.y = balloon.y + camera.y
@@ -335,7 +317,7 @@ onCollision = function(event)
 				balloon.canJump = false
 				instance1.alpha = 0
 				playExplosion()
-				restartTimer = timer.performWithDelay(1250, restart)				
+				local restartTimer = timer.performWithDelay(1250, restart)				
 			end
 		end
 		for i,v in ipairs(Sensor) do
@@ -363,9 +345,9 @@ onCollision = function(event)
 						explode = true
 						balloon.paused = true
 						balloon.canJump = false
-						stopTimer = timer.performWithDelay( 700, stopShake )
-						--slowMotion()
-						restartTimer = timer.performWithDelay(2000, restart)
+						local stopTimer = timer.performWithDelay( 700, stopShake )
+						slowMotion()
+						local restartTimer = timer.performWithDelay(2000, restart)
 					end
 				end
 			end
@@ -382,7 +364,7 @@ onCollision = function(event)
 					explode = true
 					balloon.paused = false
 					balloon.canJump = false				
-					stopTimer = timer.performWithDelay( 700, stopShake )
+					local stopTimer = timer.performWithDelay( 700, stopShake )
 					--slowMotion()
 					print (count) --debug
 				end
@@ -431,8 +413,8 @@ end
 function scene:enterScene( event )
 	if storyboard.getPrevious() ~= nil then
 		--print("previous screen in mainmenu " ..  storyboard.getPrevious());
-		--storyboard.purgeScene(storyboard.getPrevious())
-		storyboard.removeScene(storyboard.getPrevious())
+		storyboard.purgeScene(storyboard.getPrevious())
+		storyboard.removeScene(storyboard.getPrevious())			
 	end
 	local group = self.view
 	
@@ -444,13 +426,9 @@ end
 
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )
-	local group = self.view	
+	local group = self.view
 	
 	physics.stop()
-	timer.cancel(restartTimer)
-	timer.cancel(stopTimer)
-	restartTimer = nil
-	stopTimer = nil
 	Runtime:removeEventListener("collision", onCollision)
 	Runtime:removeEventListener("enterFrame", update)
 	Runtime:removeEventListener("touch", onTouch)
@@ -462,19 +440,6 @@ function scene:destroyScene( event )
 	
 	package.loaded[physics] = nil
 	physics = nil
-	group = nil
-	camera = nil
-	lostText = nil
-	wonText = nil
-	Particle = nil
-	DeathParticle = nil
-	Sensor = nil
-	Wall = nil
-	sheet1 = nil
-	instance1 = nil
-	currentSensor = nil
-	currentWall = nil
-	
 end
 
 -----------------------------------------------------------------------------------------
