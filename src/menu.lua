@@ -3,7 +3,7 @@
 -- menu.lua
 --
 -----------------------------------------------------------------------------------------
-
+local myData = require( "mydata" )
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
 -- include Corona's "widget" library
@@ -33,7 +33,7 @@ end
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
-	print ("menu: "..storyboard.state.currentLevel) --debug
+	print ("menu: "..myData.currentLevel) --debug
 	local group = self.view
 	storyboard.printMemUsage() --debug
 	-- display a background image

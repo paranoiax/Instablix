@@ -3,7 +3,7 @@
 -- main.lua
 --
 -----------------------------------------------------------------------------------------
-
+local myData = require( "mydata" )
 -- hide the status bar
 display.setStatusBar( display.HiddenStatusBar )
 
@@ -11,6 +11,6 @@ display.setStatusBar( display.HiddenStatusBar )
 local storyboard = require "storyboard"
 storyboard.isDebug = true
 storyboard.state = {}
-storyboard.state.currentLevel = 1
+myData.currentLevel = 1
 -- load menu screen
 storyboard.gotoScene( "menu" )

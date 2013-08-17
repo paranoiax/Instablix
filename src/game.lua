@@ -5,6 +5,7 @@
 -----------------------------------------------------------------------------------------
 
 local storyboard = require( "storyboard" )
+local myData = require( "mydata" )
 local scene = storyboard.newScene()
 
 -- include Corona's "physics" library
@@ -43,7 +44,7 @@ local textTransition
 -- Called when the scene's view does not exist:
 function scene:createScene( event )	
 
-print ("game: "..storyboard.state.currentLevel) --debug
+print ("game: "..myData.currentLevel) --debug
 
 local group = self.view
 storyboard.printMemUsage() --debug
@@ -173,7 +174,7 @@ end
   return(exists)
 end
 
-local map = require ('level'..storyboard.state.currentLevel)
+local map = require ('level'..myData.currentLevel)
 
 for i,v in pairs{sensors=addSensor, walls=addWall} do
 	for _, data in ipairs(map[i]) do
@@ -248,11 +249,11 @@ end
 
 local function restart()
 	local ready
-	if fileExists('level'..storyboard.state.currentLevel + 1 .. ".lua", system.ResourceDirectory) then
-		storyboard.state.currentLevel = storyboard.state.currentLevel + 1
+	if fileExists('level'..myData.currentLevel + 1 .. ".lua", system.ResourceDirectory) then
+		myData.currentLevel = myData.currentLevel + 1
 		ready = true
 	else
-		storyboard.state.currentLevel = 1
+		myData.currentLevel = 1
 		ready = true
 	end
 	if ready then
@@ -468,6 +469,7 @@ function scene:destroyScene( event )
 	distanceFrom = nil
 	count = nil
 	map = nil
+	restart = nil
 	
 end
 
